@@ -5,6 +5,16 @@
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>monthly-schedule</title>
+    <script>
+      // Restore SPA route from 404.html redirect
+      (function(){
+        var redir = sessionStorage.redirect;
+        delete sessionStorage.redirect;
+        if (redir && redir !== location.href) {
+          history.replaceState(null, null, redir);
+        }
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>

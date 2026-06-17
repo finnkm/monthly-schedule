@@ -1,4 +1,4 @@
-import { HashRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { SidebarInset, SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import { Separator } from '@/components/ui/separator';
 import { TooltipProvider } from '@/components/ui/tooltip';
@@ -12,7 +12,7 @@ import { GuidePage } from '@/pages/GuidePage';
 
 export default function App() {
   return (
-    <HashRouter>
+    <BrowserRouter basename="/monthly-schedule">
       <TooltipProvider delay={0}>
         <SidebarProvider>
           <AppSidebar />
@@ -35,6 +35,6 @@ export default function App() {
           <Toaster />
         </SidebarProvider>
       </TooltipProvider>
-    </HashRouter>
+    </BrowserRouter>
   );
 }
