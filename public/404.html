@@ -1,0 +1,14 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <script>
+      // GitHub Pages SPA redirect
+      // Stores the real path and redirects to index.html
+      sessionStorage.redirect = location.href;
+      location.replace(
+        location.origin + '/monthly-schedule/'
+      );
+    </script>
+  </head>
+</html>
