@@ -2,7 +2,6 @@ import { getDaysInMonth, getDay, format, addDays } from 'date-fns';
 import type {
   StaffMember,
   LeaveRequest,
-  MonthlySchedule,
   DailySchedule,
   ShiftAssignment,
   ShiftType,
