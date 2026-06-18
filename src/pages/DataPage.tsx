@@ -195,20 +195,20 @@ export function DataPage() {
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>데이터를 복원하시겠습니까?</AlertDialogTitle>
-            <AlertDialogDescription asChild>
-              <div className="space-y-2">
-                <p>
+            <AlertDialogDescription>
+              <span className="block space-y-2">
+                <span className="block">
                   백업 시점: {pendingImport?.exportedAt
                     ? new Date(pendingImport.exportedAt).toLocaleString('ko-KR')
                     : '-'}
-                </p>
-                <p>
+                </span>
+                <span className="block">
                   포함된 데이터: {pendingImport ? Object.keys(pendingImport.stores).map(k => storeLabels[k] || k).join(', ') : ''}
-                </p>
-                <p className="text-destructive font-medium">
+                </span>
+                <span className="block text-destructive font-medium">
                   현재 저장된 데이터가 모두 덮어씌워집니다.
-                </p>
-              </div>
+                </span>
+              </span>
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
