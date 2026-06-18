@@ -40,6 +40,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
+import { PageHeader } from '@/components/PageHeader';
 
 const EXCLUDED_SHIFT_OPTIONS: ShiftType[] = ['Nur', 'Dur', 'B2'];
 const GROUP_LABELS: Record<StaffGroup, string> = {
@@ -130,15 +131,18 @@ export function StaffPage() {
   };
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h2 className="text-xl font-semibold">직원 관리</h2>
-        <Button onClick={openAdd}>직원 추가</Button>
-      </div>
+    <div className="space-y-6">
+      <PageHeader
+        eyebrow="Team"
+        title="직원 관리"
+        description="근무에 참여하는 직원을 등록하고 그룹·제외 근무를 설정합니다."
+        actions={<Button onClick={openAdd}>직원 추가</Button>}
+      />
 
-      <Table>
+      <div className="overflow-hidden rounded-2xl border bg-card">
+        <Table>
         <TableHeader>
-          <TableRow>
+          <TableRow className="bg-muted/40 hover:bg-muted/40">
             <TableHead>사번</TableHead>
             <TableHead>이름</TableHead>
             <TableHead>그룹</TableHead>
@@ -178,14 +182,15 @@ export function StaffPage() {
             </TableRow>
           ))}
           {staff.length === 0 && (
-            <TableRow>
-              <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
-                등록된 직원이 없습니다.
+            <TableRow className="hover:bg-transparent">
+              <TableCell colSpan={5} className="text-center text-muted-foreground py-12">
+                아직 등록된 직원이 없습니다. 우측 상단의 <span className="font-medium text-foreground">직원 추가</span>로 시작하세요.
               </TableCell>
             </TableRow>
           )}
         </TableBody>
-      </Table>
+        </Table>
+      </div>
 
       {/* 직원 등록/수정 다이얼로그 */}
       <Dialog open={open} onOpenChange={setOpen}>

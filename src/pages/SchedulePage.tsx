@@ -5,10 +5,11 @@ import { useStaffStore } from '@/store/staffStore';
 import { useOffRequestStore } from '@/store/offRequestStore';
 import { useScheduleStore } from '@/store/scheduleStore';
 import { useHolidayStore } from '@/store/holidayStore';
-import { generateMonthlySchedule } from '@/lib/scheduleGenerator';
+import { generateMonthlyScheduleInWorker } from '@/lib/schedule/runner';
 import { DEFAULT_CONSTRAINTS } from '@/types';
-import type { ValidationViolation } from '@/types';
+import { CalendarDays } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import {
   Select,
   SelectContent,
@@ -27,26 +28,34 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { ScheduleTable } from '@/components/schedule/ScheduleTable';
+import { ScheduleGeneratingOverlay } from '@/components/schedule/ScheduleGeneratingOverlay';
+import { PageHeader } from '@/components/PageHeader';
 
 const YEARS = [2025, 2026, 2027];
 const MONTHS = Array.from({ length: 12 }, (_, i) => i + 1);
 
 export function SchedulePage() {
   const { year, month, setYear, setMonth } = useCalendarStore();
-  const [violations, setViolations] = useState<ValidationViolation[]>([]);
-  const [holidayBonuses, setHolidayBonuses] = useState<Record<string, number>>({});
-
   // OFF 미설정 직원 목록 — 비어있지 않으면 경고 다이얼로그 표시
   const [offMissingStaff, setOffMissingStaff] = useState<string[]>([]);
   const [showResetDialog, setShowResetDialog] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(false);
 
   const { staff } = useStaffStore();
   const { getMonthRequests, approveMonthRequests } = useOffRequestStore();
-  const { saveSchedule, getSchedule, deleteSchedule } = useScheduleStore();
+  const { saveSchedule, getSchedule, getMeta, deleteSchedule } = useScheduleStore();
   const { getHolidays } = useHolidayStore();
 
   const schedule = getSchedule(year, month);
+  const { violations, holidayBonuses } = getMeta(year, month);
+  const holidays = getHolidays(year, month);
   const activeStaff = staff;
+
+  const DOW_KR = ['일', '월', '화', '수', '목', '금', '토'];
+  const formatHoliday = (d: string) => {
+    const dt = new Date(d);
+    return `${dt.getMonth() + 1}/${dt.getDate()} (${DOW_KR[dt.getDay()]})`;
+  };
 
   const handleGenerate = () => {
     if (activeStaff.length === 0) {
@@ -61,72 +70,114 @@ export function SchedulePage() {
       return;
     }
 
-    doGenerate();
+    void doGenerate();
   };
 
-  const doGenerate = () => {
+  const doGenerate = async () => {
     approveMonthRequests(year, month);
     const approvedLeaves = getMonthRequests(year, month);
-    const result = generateMonthlySchedule(
-      activeStaff,
-      year,
-      month,
-      approvedLeaves,
-      getHolidays(year, month),
-      DEFAULT_CONSTRAINTS
-    );
-    saveSchedule(result.schedule);
-    setViolations(result.violations);
-    setHolidayBonuses(result.holidayBonuses);
+    setIsGenerating(true);
+    try {
+      const result = await generateMonthlyScheduleInWorker(
+        activeStaff,
+        year,
+        month,
+        approvedLeaves,
+        getHolidays(year, month),
+        DEFAULT_CONSTRAINTS
+      );
+      if (!result?.schedule) {
+        throw new Error(
+          `스케줄 생성 결과가 비정상입니다: ${JSON.stringify(Object.keys(result ?? {}))}`
+        );
+      }
+      saveSchedule(result.schedule, {
+        violations: result.violations,
+        holidayBonuses: result.holidayBonuses,
+      });
 
-    const bonusCount = Object.keys(result.holidayBonuses).length;
-    if (result.violations.length > 0) {
-      toast.warning(`스케줄 생성 완료 — 제약 위반 ${result.violations.length}건`);
-    } else if (bonusCount > 0) {
-      toast.success(`스케줄 생성 완료 — 보상 휴일 ${bonusCount}명 적용`);
-    } else {
-      toast.success('스케줄 생성 완료');
+      const bonusCount = Object.keys(result.holidayBonuses).length;
+      if (result.violations.length > 0) {
+        toast.warning(`스케줄 생성 완료 — 제약 위반 ${result.violations.length}건`);
+      } else if (bonusCount > 0) {
+        toast.success(`스케줄 생성 완료 — 보상 휴일 ${bonusCount}명 적용`);
+      } else {
+        toast.success('스케줄 생성 완료');
+      }
+    } catch (e) {
+      toast.error('스케줄 생성 중 오류가 발생했습니다.');
+      console.error(e);
+    } finally {
+      setIsGenerating(false);
     }
   };
 
   const handleReset = () => {
     deleteSchedule(year, month);
-    setViolations([]);
-    setHolidayBonuses({});
     setShowResetDialog(false);
     toast.success(`${year}년 ${month}월 스케줄이 초기화되었습니다.`);
   };
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center gap-3 flex-wrap">
-        <h2 className="text-xl font-semibold">근무 스케줄</h2>
-        <Select value={String(year)} onValueChange={(v) => setYear(Number(v))}>
-          <SelectTrigger className="w-28">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {YEARS.map((y) => (
-              <SelectItem key={y} value={String(y)}>{y}년</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        <Select value={String(month)} onValueChange={(v) => setMonth(Number(v))}>
-          <SelectTrigger className="w-24">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {MONTHS.map((m) => (
-              <SelectItem key={m} value={String(m)}>{m}월</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        {schedule ? (
-          <Button variant="outline" onClick={() => setShowResetDialog(true)}>
-            초기화
-          </Button>
+    <div className="space-y-5">
+      {isGenerating && <ScheduleGeneratingOverlay />}
+      <PageHeader
+        eyebrow="Schedule"
+        title="근무 스케줄"
+        description="모든 제약을 동시에 고려한 월간 근무표를 자동으로 생성합니다."
+        actions={
+          <>
+            <Select value={String(year)} onValueChange={(v) => setYear(Number(v))}>
+              <SelectTrigger className="w-28">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {YEARS.map((y) => (
+                  <SelectItem key={y} value={String(y)}>{y}년</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select value={String(month)} onValueChange={(v) => setMonth(Number(v))}>
+              <SelectTrigger className="w-24">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {MONTHS.map((m) => (
+                  <SelectItem key={m} value={String(m)}>{m}월</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {schedule ? (
+              <Button variant="outline" onClick={() => setShowResetDialog(true)}>
+                초기화
+              </Button>
+            ) : (
+              <Button onClick={handleGenerate} disabled={isGenerating}>
+                {isGenerating ? '생성 중…' : '스케줄 생성'}
+              </Button>
+            )}
+          </>
+        }
+      />
+
+      {/* 이번 달 공휴일 한눈에 보기 */}
+      <div className="flex items-center gap-2 flex-wrap rounded-md border bg-muted/30 px-3 py-2 text-sm">
+        <span className="inline-flex items-center gap-1.5 font-medium text-foreground">
+          <CalendarDays className="h-4 w-4 text-rose-500" />
+          {month}월 공휴일
+        </span>
+        {holidays.length === 0 ? (
+          <span className="text-muted-foreground">등록된 공휴일이 없습니다.</span>
         ) : (
-          <Button onClick={handleGenerate}>스케줄 생성</Button>
+          holidays.map((d) => (
+            <Badge
+              key={d}
+              variant="secondary"
+              className="bg-rose-100 text-rose-700 hover:bg-rose-100"
+            >
+              {formatHoliday(d)}
+            </Badge>
+          ))
         )}
       </div>
 

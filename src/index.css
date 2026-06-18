@@ -128,3 +128,30 @@
     @apply font-sans;
     }
 }
+
+/* ── AI 스케줄 생성 오버레이 애니메이션 ───────────────────────── */
+@keyframes ai-spin {
+  to { transform: rotate(360deg); }
+}
+@keyframes ai-shimmer {
+  0% { transform: translateX(-160%); }
+  100% { transform: translateX(360%); }
+}
+@keyframes ai-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+
+/* 회전하는 컬러 링 (가운데를 마스크로 도려내 테두리만 남김) */
+.ai-core-ring {
+  background: conic-gradient(from 0deg, #6366f1, #d946ef, #22d3ee, #6366f1);
+  -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 6px), #000 calc(100% - 6px));
+          mask: radial-gradient(farthest-side, transparent calc(100% - 6px), #000 calc(100% - 6px));
+  animation: ai-spin 3s linear infinite;
+}
+.ai-shimmer { animation: ai-shimmer 1.4s ease-in-out infinite; }
+.ai-float { animation: ai-float 3.2s ease-in-out infinite; }
+
+@media (prefers-reduced-motion: reduce) {
+  .ai-core-ring, .ai-shimmer, .ai-float { animation: none; }
+}

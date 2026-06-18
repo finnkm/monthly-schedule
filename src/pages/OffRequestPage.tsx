@@ -26,6 +26,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { cn } from '@/lib/utils';
+import { PageHeader } from '@/components/PageHeader';
 
 const YEARS = [2025, 2026, 2027];
 const MONTHS = Array.from({ length: 12 }, (_, i) => i + 1);
@@ -56,37 +57,41 @@ export function OffRequestPage() {
 
   return (
     <div className="space-y-6">
-      <h2 className="text-xl font-semibold">OFF 신청</h2>
-
-      {/* 연도/월 선택 */}
-      <div className="flex gap-3">
-        <Select value={String(year)} onValueChange={(v) => setYear(Number(v))}>
-          <SelectTrigger className="w-28">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {YEARS.map((y) => (
-              <SelectItem key={y} value={String(y)}>{y}년</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-
-        <Select value={String(month)} onValueChange={(v) => setMonth(Number(v))}>
-          <SelectTrigger className="w-24">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {MONTHS.map((m) => (
-              <SelectItem key={m} value={String(m)}>{m}월</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
+      <PageHeader
+        eyebrow="Time off"
+        title="OFF 신청"
+        description="직원별 휴가 신청을 등록합니다. 행을 클릭하면 달력에서 날짜를 선택할 수 있어요."
+        actions={
+          <>
+            <Select value={String(year)} onValueChange={(v) => setYear(Number(v))}>
+              <SelectTrigger className="w-28">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {YEARS.map((y) => (
+                  <SelectItem key={y} value={String(y)}>{y}년</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select value={String(month)} onValueChange={(v) => setMonth(Number(v))}>
+              <SelectTrigger className="w-24">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {MONTHS.map((m) => (
+                  <SelectItem key={m} value={String(m)}>{m}월</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </>
+        }
+      />
 
       {/* 직원 목록 테이블 — row 클릭으로 모달 오픈 */}
-      <Table>
+      <div className="overflow-hidden rounded-2xl border bg-card">
+        <Table>
         <TableHeader>
-          <TableRow>
+          <TableRow className="bg-muted/40 hover:bg-muted/40">
             <TableHead>사번</TableHead>
             <TableHead>이름</TableHead>
             <TableHead>신청 날짜</TableHead>
@@ -123,14 +128,15 @@ export function OffRequestPage() {
             );
           })}
           {activeStaff.length === 0 && (
-            <TableRow>
-              <TableCell colSpan={4} className="text-center text-muted-foreground py-8">
-                등록된 직원이 없습니다.
+            <TableRow className="hover:bg-transparent">
+              <TableCell colSpan={4} className="text-center text-muted-foreground py-12">
+                먼저 직원 관리에서 직원을 등록하세요.
               </TableCell>
             </TableRow>
           )}
         </TableBody>
-      </Table>
+        </Table>
+      </div>
 
       {/* OFF 신청 달력 모달 */}
       <Dialog open={!!modalEmpNum} onOpenChange={(open) => !open && setModalEmpNum(null)}>
