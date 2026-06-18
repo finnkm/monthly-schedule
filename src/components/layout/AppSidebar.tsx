@@ -1,5 +1,5 @@
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
-import { Calendar, Users, CalendarOff, Star, LayoutGrid, BookOpen } from 'lucide-react';
+import { Calendar, Users, CalendarOff, Star, LayoutGrid, BookOpen, HardDrive, MessageCircle } from 'lucide-react';
 import {
   Sidebar,
   SidebarContent,
@@ -20,6 +20,7 @@ const navItems = [
   { to: '/staff', label: '직원 관리', icon: Users },
   { to: '/off-requests', label: 'OFF 신청', icon: CalendarOff },
   { to: '/holidays', label: '공휴일 관리', icon: Star },
+  { to: '/data', label: '데이터 관리', icon: HardDrive },
 ];
 
 export function AppSidebar() {
@@ -72,15 +73,18 @@ export function AppSidebar() {
       </SidebarContent>
 
       <SidebarFooter>
-        <div className="flex items-center gap-2 px-2 py-1.5 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0">
-          <div className="flex h-7 w-7 items-center justify-center rounded-full bg-muted text-muted-foreground text-xs font-medium shrink-0">
-            관
-          </div>
-          <div className="flex flex-col gap-0 leading-none group-data-[collapsible=icon]:hidden overflow-hidden">
-            <span className="text-xs font-medium truncate">관리자</span>
-            <span className="text-[10px] text-muted-foreground truncate">Schedule v1.0</span>
-          </div>
-        </div>
+        <SidebarMenu>
+          <SidebarMenuItem>
+            <SidebarMenuButton
+              isActive={location.pathname === '/feedback'}
+              tooltip="개발자 노트"
+              render={<NavLink to="/feedback" />}
+            >
+              <MessageCircle />
+              <span>개발자 노트</span>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+        </SidebarMenu>
       </SidebarFooter>
 
       <SidebarRail />

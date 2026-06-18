@@ -9,6 +9,9 @@ import { StaffPage } from '@/pages/StaffPage';
 import { OffRequestPage } from '@/pages/OffRequestPage';
 import { HolidayPage } from '@/pages/HolidayPage';
 import { GuidePage } from '@/pages/GuidePage';
+import { DataPage } from '@/pages/DataPage';
+import { FeedbackPage } from '@/pages/FeedbackPage';
+import { FeatureBanner } from '@/components/FeatureBanner';
 
 export default function App() {
   return (
@@ -29,10 +32,13 @@ export default function App() {
                 <Route path="/staff" element={<StaffPage />} />
                 <Route path="/off-requests" element={<OffRequestPage />} />
                 <Route path="/holidays" element={<HolidayPage />} />
+                <Route path="/data" element={<DataPage />} />
+                <Route path="/feedback" element={<FeedbackPage />} />
               </Routes>
             </div>
           </SidebarInset>
           <Toaster />
+          <FeatureBanner />
         </SidebarProvider>
       </TooltipProvider>
     </BrowserRouter>
