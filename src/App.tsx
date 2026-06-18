@@ -14,7 +14,7 @@ export default function App() {
   return (
     <BrowserRouter basename="/monthly-schedule">
       <TooltipProvider delay={0}>
-        <SidebarProvider>
+        <SidebarProvider defaultOpen={false}>
           <AppSidebar />
           <SidebarInset className="min-w-0 overflow-x-hidden">
             <header className="flex h-12 shrink-0 items-center gap-2 border-b px-4">

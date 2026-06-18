@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { useCalendarStore } from '@/store/calendarStore';
 import { useStaffStore } from '@/store/staffStore';
@@ -6,8 +6,9 @@ import { useOffRequestStore } from '@/store/offRequestStore';
 import { useScheduleStore } from '@/store/scheduleStore';
 import { useHolidayStore } from '@/store/holidayStore';
 import { generateMonthlyScheduleInWorker } from '@/lib/schedule/runner';
+import { exportAsImage, exportAsExcel } from '@/lib/exportSchedule';
 import { DEFAULT_CONSTRAINTS } from '@/types';
-import { CalendarDays } from 'lucide-react';
+import { CalendarDays, Download, Image } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -36,10 +37,10 @@ const MONTHS = Array.from({ length: 12 }, (_, i) => i + 1);
 
 export function SchedulePage() {
   const { year, month, setYear, setMonth } = useCalendarStore();
-  // OFF 미설정 직원 목록 — 비어있지 않으면 경고 다이얼로그 표시
   const [offMissingStaff, setOffMissingStaff] = useState<string[]>([]);
   const [showResetDialog, setShowResetDialog] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
+  const tableRef = useRef<HTMLDivElement>(null);
 
   const { staff } = useStaffStore();
   const { getMonthRequests, approveMonthRequests } = useOffRequestStore();
@@ -116,6 +117,26 @@ export function SchedulePage() {
     deleteSchedule(year, month);
     setShowResetDialog(false);
     toast.success(`${year}년 ${month}월 스케줄이 초기화되었습니다.`);
+  };
+
+  const handleExportImage = async () => {
+    if (!tableRef.current) return;
+    try {
+      await exportAsImage(tableRef.current, `스케줄_${year}년_${month}월.png`);
+      toast.success('이미지 다운로드 완료');
+    } catch {
+      toast.error('이미지 생성에 실패했습니다.');
+    }
+  };
+
+  const handleExportExcel = () => {
+    if (!schedule) return;
+    try {
+      exportAsExcel(schedule, activeStaff, holidayBonuses);
+      toast.success('엑셀 다운로드 완료');
+    } catch {
+      toast.error('엑셀 생성에 실패했습니다.');
+    }
   };
 
   return (
@@ -218,12 +239,25 @@ export function SchedulePage() {
       )}
 
       {schedule ? (
-        <ScheduleTable
-          schedule={schedule}
-          staff={activeStaff}
-          violations={violations}
-          holidayBonuses={holidayBonuses}
-        />
+        <div className="space-y-3">
+          <div className="flex justify-end gap-2">
+            <Button variant="outline" size="sm" onClick={handleExportImage}>
+              <Image className="h-4 w-4" />
+              이미지 저장
+            </Button>
+            <Button variant="outline" size="sm" onClick={handleExportExcel}>
+              <Download className="h-4 w-4" />
+              엑셀 다운로드
+            </Button>
+          </div>
+          <ScheduleTable
+            ref={tableRef}
+            schedule={schedule}
+            staff={activeStaff}
+            violations={violations}
+            holidayBonuses={holidayBonuses}
+          />
+        </div>
       ) : (
         <div className="border rounded-lg p-12 text-center text-muted-foreground">
           "스케줄 생성" 버튼을 눌러 {year}년 {month}월 스케줄을 생성하세요.

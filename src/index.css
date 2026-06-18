@@ -155,3 +155,13 @@
 @media (prefers-reduced-motion: reduce) {
   .ai-core-ring, .ai-shimmer, .ai-float { animation: none; }
 }
+
+/* 스케줄 테이블: 네이티브 스크롤바 숨기고 커스텀 스크롤바 사용 */
+.schedule-scroll {
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none; /* Firefox */
+}
+.schedule-scroll::-webkit-scrollbar {
+  display: none; /* Chrome/Safari */
+}

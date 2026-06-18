@@ -1,3 +1,4 @@
+import { forwardRef, useRef, useState, useEffect, useCallback } from 'react';
 import type { MonthlySchedule, StaffMember, ValidationViolation, ShiftType } from '@/types';
 import { ScheduleCell } from './ScheduleCell';
 import { DailySummaryRow } from './DailySummaryRow';
@@ -14,7 +15,7 @@ interface ScheduleTableProps {
   holidayBonuses: Record<string, number>;
 }
 
-export function ScheduleTable({ schedule, staff, violations, holidayBonuses }: ScheduleTableProps) {
+export const ScheduleTable = forwardRef<HTMLDivElement, ScheduleTableProps>(function ScheduleTable({ schedule, staff, violations, holidayBonuses }, ref) {
   const { days } = schedule;
 
   const violationMap = new Map<string, string>();
@@ -34,10 +35,79 @@ export function ScheduleTable({ schedule, staff, violations, holidayBonuses }: S
       return acc + (a?.shiftType === type ? 1 : 0);
     }, 0);
 
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const [thumbLeft, setThumbLeft] = useState(0);
+  const [thumbWidth, setThumbWidth] = useState(0);
+  const [showScrollbar, setShowScrollbar] = useState(false);
+  const isDragging = useRef(false);
+  const dragStartX = useRef(0);
+  const dragStartScroll = useRef(0);
+
+  const updateThumb = useCallback(() => {
+    const el = scrollContainerRef.current;
+    if (!el) return;
+    const { scrollWidth, clientWidth, scrollLeft } = el;
+    if (scrollWidth <= clientWidth) {
+      setShowScrollbar(false);
+      return;
+    }
+    setShowScrollbar(true);
+    const ratio = clientWidth / scrollWidth;
+    setThumbWidth(Math.max(ratio * clientWidth, 40));
+    setThumbLeft((scrollLeft / (scrollWidth - clientWidth)) * (clientWidth - Math.max(ratio * clientWidth, 40)));
+  }, []);
+
+  useEffect(() => {
+    const el = scrollContainerRef.current;
+    if (!el) return;
+    updateThumb();
+    el.addEventListener('scroll', updateThumb, { passive: true });
+    const ro = new ResizeObserver(updateThumb);
+    ro.observe(el);
+    return () => {
+      el.removeEventListener('scroll', updateThumb);
+      ro.disconnect();
+    };
+  }, [updateThumb]);
+
+  const handleTrackClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    const el = scrollContainerRef.current;
+    if (!el || isDragging.current) return;
+    const trackRect = e.currentTarget.getBoundingClientRect();
+    const clickX = e.clientX - trackRect.left;
+    const ratio = clickX / trackRect.width;
+    el.scrollLeft = ratio * (el.scrollWidth - el.clientWidth);
+  };
+
+  const handleThumbMouseDown = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    isDragging.current = true;
+    dragStartX.current = e.clientX;
+    dragStartScroll.current = scrollContainerRef.current?.scrollLeft ?? 0;
+
+    const onMove = (ev: MouseEvent) => {
+      const el = scrollContainerRef.current;
+      if (!el) return;
+      const delta = ev.clientX - dragStartX.current;
+      const trackWidth = el.clientWidth - thumbWidth;
+      const scrollRange = el.scrollWidth - el.clientWidth;
+      el.scrollLeft = dragStartScroll.current + (delta / trackWidth) * scrollRange;
+    };
+    const onUp = () => {
+      isDragging.current = false;
+      document.removeEventListener('mousemove', onMove);
+      document.removeEventListener('mouseup', onUp);
+    };
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('mouseup', onUp);
+  };
+
   return (
-    <div className="overflow-x-auto border rounded-lg">
-      <table className="text-xs border-collapse min-w-max">
-        <thead>
+    <div ref={ref} className="border rounded-lg">
+      <div ref={scrollContainerRef} className="schedule-scroll">
+        <table className="text-xs border-collapse min-w-max">
+          <thead>
           <tr className="bg-muted">
             <th className="sticky left-0 bg-muted z-10 px-3 py-2 text-left border-r min-w-28 font-medium">
               이름
@@ -151,7 +221,21 @@ export function ScheduleTable({ schedule, staff, violations, holidayBonuses }: S
           <DailySummaryRow label="A1" days={days} shiftType="A1" />
           <DailySummaryRow label="B2" days={days} shiftType="B2" />
         </tbody>
-      </table>
+        </table>
+      </div>
+      {showScrollbar && (
+        <div
+          data-scrollbar
+          className="relative h-3 bg-muted/60 border-t cursor-pointer"
+          onClick={handleTrackClick}
+        >
+          <div
+            className="absolute top-0.5 h-2 rounded-full bg-gray-400 hover:bg-gray-500 active:bg-gray-600 transition-colors"
+            style={{ left: thumbLeft, width: thumbWidth }}
+            onMouseDown={handleThumbMouseDown}
+          />
+        </div>
+      )}
     </div>
   );
-}
+});
